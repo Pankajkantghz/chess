@@ -1,4 +1,4 @@
-node_modules/
+git commit -m "first commit"node_modules/
 dist/
 tsconfig.tsbuildinfo
 .env
