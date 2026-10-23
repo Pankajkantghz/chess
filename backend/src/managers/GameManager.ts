@@ -1,6 +1,10 @@
 import WebSocket from "ws";
 import Game from "../game/Game.js";
-import type { ClientMessage, ServerMessage, TimeControl } from "../types/type.js";
+import type {
+  ClientMessage,
+  ServerMessage,
+  TimeControl,
+} from "../types/type.js";
 
 class GameManager {
   private games: Game[];
@@ -14,19 +18,7 @@ class GameManager {
     this.pendingUser = null;
   }
 
-  private send(socket: WebSocket, message: ServerMessage) {
-    if (socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify(message));
-    }
-  }
-
-  private isValidSquare(square: string) {
-    return /^[a-h][1-8]$/.test(square);
-  }
-
-  private removeGame(game: Game) {
-    this.games = this.games.filter((activeGame) => activeGame !== game);
-  }
+  // --- Public Methods ---
 
   addUser(socket: WebSocket) {
     socket.on("message", (data) => {
@@ -41,21 +33,17 @@ class GameManager {
           code: "INVALID_JSON",
           message: "Invalid JSON",
         });
-
         return;
       }
 
+      // 2. Handle Joining Game
       if (message.type === "JOIN_GAME") {
         if (this.pendingUser === null) {
           this.pendingUser = {
             socket,
             timeControl: message.timeControl,
           };
-
-          this.send(socket, {
-            type: "WAITING_FOR_PLAYER",
-          });
-
+          this.send(socket, { type: "WAITING_FOR_PLAYER" });
           return;
         }
 
@@ -65,36 +53,35 @@ class GameManager {
             code: "TIME_CONTROL_MISMATCH",
             message: "No opponent found for this time control",
           });
-
           return;
         }
+
+        console.log("Matching two players...");
 
         const game = new Game(
           this.pendingUser.socket,
           socket,
           message.timeControl,
         );
-
         this.games.push(game);
         this.pendingUser = null;
-
+        console.log("Game Created. Active games:", this.games.length);
         return;
       }
 
-      // 2. Validate message type
+      // 3. Validate message type for active games
       if (message.type !== "MOVE" && message.type !== "RESIGN") {
         this.send(socket, {
           type: "ERROR",
           code: "UNKNOWN_MESSAGE_TYPE",
           message: "Unknown message type",
         });
-
         return;
       }
 
-      // 3. Find player's game
+      // 4. Find player's active game
       const game = this.games.find(
-        (game) => game.player1 === socket || game.player2 === socket,
+        (g) => g.player1 === socket || g.player2 === socket,
       );
 
       if (!game) {
@@ -103,11 +90,10 @@ class GameManager {
           code: "NO_GAME",
           message: "You are not currently in a game",
         });
-
         return;
       }
 
-      // 4. Handle MOVE
+      // 5. Handle MOVE
       if (message.type === "MOVE") {
         if (
           !message.move ||
@@ -119,7 +105,6 @@ class GameManager {
             code: "INVALID_MOVE_FORMAT",
             message: "Invalid move format",
           });
-
           return;
         }
 
@@ -132,7 +117,6 @@ class GameManager {
             code: "INVALID_CHESS_SQUARE",
             message: "Invalid chess square",
           });
-
           return;
         }
 
@@ -143,7 +127,7 @@ class GameManager {
         }
       }
 
-      // 5. Handle RESIGN
+      // 6. Handle RESIGN
       else if (message.type === "RESIGN") {
         game.resign(socket);
 
@@ -155,16 +139,13 @@ class GameManager {
   }
 
   removeUser(socket: WebSocket) {
-    // Player was waiting for an opponent
     if (this.pendingUser?.socket === socket) {
       this.pendingUser = null;
-
       return;
     }
 
-    // Find active game
     const game = this.games.find(
-      (game) => game.player1 === socket || game.player2 === socket,
+      (g) => g.player1 === socket || g.player2 === socket,
     );
 
     if (!game) {
@@ -172,13 +153,26 @@ class GameManager {
     }
 
     console.log("Player disconnected from game");
-
     game.playerDisconnected(socket);
-
     this.removeGame(game);
-
     console.log("Game removed");
     console.log("Active games:", this.games.length);
+  }
+
+  // --- Private Helpers ---
+
+  private send(socket: WebSocket, message: ServerMessage) {
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(message));
+    }
+  }
+
+  private isValidSquare(square: string) {
+    return /^[a-h][1-8]$/.test(square);
+  }
+
+  private removeGame(game: Game) {
+    this.games = this.games.filter((activeGame) => activeGame !== game);
   }
 }
 

@@ -1,22 +1,12 @@
+// --- Basic Data & Game Types ---
+
 export type ChessMove = {
   from: string;
   to: string;
   promotion?: "q" | "r" | "b" | "n";
 };
-export type TimeControl = 5 | 10 | 25;
 
-export type ClientMessage =
-  | {
-      type: "MOVE";
-      move: ChessMove;
-    }
-  | {
-      type: "RESIGN";
-    }
-  | {
-      type: "JOIN_GAME";
-      timeControl: TimeControl;
-    };
+export type TimeControl = 1 | 3 | 5 | 10 | 25;
 
 export type GameOverReason =
   | "checkmate"
@@ -25,7 +15,28 @@ export type GameOverReason =
   | "resignation"
   | "timeout"
   | "disconnect";
+
+// --- Client Message Protocols ---
+
+export type ClientMessage =
+  | {
+      type: "JOIN_GAME";
+      timeControl: TimeControl;
+    }
+  | {
+      type: "MOVE";
+      move: ChessMove;
+    }
+  | {
+      type: "RESIGN";
+    };
+
+// --- Server Message Protocols ---
+
 export type ServerMessage =
+  | {
+      type: "WAITING_FOR_PLAYER";
+    }
   | {
       type: "INIT_GAME";
       gameId: string;
@@ -39,10 +50,10 @@ export type ServerMessage =
       fen: string;
     }
   | {
-      type: "GAME_OVER";
+      type: "CLOCK";
       gameId: string;
-      winner: "white" | "black" | null;
-      reason: GameOverReason;
+      whiteTime: number;
+      blackTime: number;
     }
   | {
       type: "INVALID_MOVE";
@@ -50,13 +61,10 @@ export type ServerMessage =
       message: string;
     }
   | {
-      type: "WAITING_FOR_PLAYER";
-    }
-  | {
-      type: "CLOCK";
+      type: "GAME_OVER";
       gameId: string;
-      whiteTime: number;
-      blackTime: number;
+      winner: "white" | "black" | null;
+      reason: GameOverReason;
     }
   | {
       type: "ERROR";
