@@ -15,7 +15,7 @@ const server = createServer((req, res) => {
   res.end("Not Found");
 });
 
-const wss = new WebSocketServer({ port: PORT });
+const wss = new WebSocketServer({ server });
 
 const gameManager = new GameManager();
 
