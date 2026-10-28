@@ -45,9 +45,9 @@ export function useSocket() {
 
   // WebSocket lifecycle and incoming messages
   useEffect(() => {
-    const ws = new WebSocket(
-      import.meta.env.VITE_WS_URL || "ws://localhost:8081",
-    );
+    const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080";
+
+    const ws = new WebSocket(WS_URL);
 
     let active = true;
 
@@ -223,14 +223,14 @@ export function useSocket() {
 
   // Expose hook state and actions
   return {
-  connected,
-  matchStatus,
-  gameInfo,
-  gameOverMessage,
-  errorMessage,
-  clearErrorMessage,
-  isSearching,
-  joinGame,
-  sendMessage,
-};
+    connected,
+    matchStatus,
+    gameInfo,
+    gameOverMessage,
+    errorMessage,
+    clearErrorMessage,
+    isSearching,
+    joinGame,
+    sendMessage,
+  };
 }
